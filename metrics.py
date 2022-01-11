@@ -1,10 +1,15 @@
 import authlib.oauth2.rfc8628
 from authlib.integrations.requests_client import OAuth2Session
 import time
-import os
+import os, sys
+import logging
 from prometheus_client import start_http_server, Gauge
 
 base_url = 'https://api.netatmo.com'
+
+logging.basicConfig(format='[%(asctime)s] - %(levelname)s - %(message)s',
+                    level=logging.DEBUG,
+                    stream=sys.stdout)
 
 
 class CollectMetrics:
@@ -21,9 +26,14 @@ class CollectMetrics:
         self.username = os.environ.get('API_USERNAME')
         self.password = os.environ.get('API_PASSWORD')
 
+        logging.info("API Username: %s" % self.username)
+        logging.info("API Password: %s" % self.password)
+        logging.info("API client_id: %s" % self.client_id)
+        logging.info("API client_secret: %s" % self.client_secret)
+
         # Error out if one of the required variables is missing
         if self.client_id == "" or self.client_secret == "" or self.username == "" or self.password == "":
-            print("FATAL: No credentials configured")
+            logging.fatal("No credentials configured")
             exit(1)
 
         # OAuth2 authentication
@@ -61,7 +71,6 @@ class CollectMetrics:
     def get_home_status(self, home_id):
         query = {'home_id': home_id}
         resp = self._get_api(url=self.base_url + '/api/homestatus', params=query).json()
-        print(resp)
         return resp
 
     def _clean_id(self, id):
@@ -99,6 +108,8 @@ class CollectMetrics:
 
 
 if __name__ == "__main__":
+    logging.info("Starting exporter")
     collector = CollectMetrics()
     start_http_server(9999)
+    logging.info("Entering run loop")
     collector.run_loop()
