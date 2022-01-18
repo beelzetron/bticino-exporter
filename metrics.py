@@ -87,6 +87,9 @@ class CollectMetrics:
         for home in homes['homes']:
             devices = {}
             for dev in home['modules']:
+                # Skip Netatmo weather station since it doesn't have a name attribute
+                if 'NA' in dev['type']:
+                    continue
                 id = self._clean_id(dev['id'])
                 devices[id] = {}
                 device_info = {
